@@ -138,16 +138,34 @@
       });
   }
 
-  // An episode or season belongs to its series: look the parent up once, in batches.
+  // An episode or season belongs to its series: look the parent up once, in batches of 50.
+  // Returns a promise that settles when every requested id is known (shared with in-flight lookups,
+  // so callers never spin while a request is pending).
   function resolveParents(ids) {
-    var missing = ids.filter(function (id) {
-      return !(id in state.parents) && !state.pendingParents[id];
+    var waits = [];
+    var fresh = [];
+    ids.forEach(function (id) {
+      if (id in state.parents) return;
+      if (state.pendingParents[id]) {
+        waits.push(state.pendingParents[id]);
+      } else {
+        fresh.push(id);
+      }
     });
-    if (!missing.length || !apiReady()) return Promise.resolve();
-    missing.forEach(function (id) {
-      state.pendingParents[id] = true;
-    });
-    return apiFetch("Items", { Ids: missing.slice(0, 50).join(","), Fields: "SeriesId", EnableImages: false })
+    if (fresh.length && apiReady()) {
+      for (var i = 0; i < fresh.length; i += 50) {
+        waits.push(lookupParents(fresh.slice(i, i + 50)));
+      }
+    } else if (fresh.length) {
+      fresh.forEach(function (id) {
+        state.parents[id] = null;
+      });
+    }
+    return Promise.all(waits);
+  }
+
+  function lookupParents(batch) {
+    var p = apiFetch("Items", { Ids: batch.join(","), Fields: "SeriesId", EnableImages: false })
       .then(function (data) {
         (data.Items || []).forEach(function (it) {
           state.parents[it.Id] = it.SeriesId || it.ParentId || null;
@@ -155,11 +173,15 @@
       })
       .catch(function () {})
       .then(function () {
-        missing.forEach(function (id) {
+        batch.forEach(function (id) {
           delete state.pendingParents[id];
           if (!(id in state.parents)) state.parents[id] = null;
         });
       });
+    batch.forEach(function (id) {
+      state.pendingParents[id] = p;
+    });
+    return p;
   }
 
   function lookup(id) {
@@ -181,15 +203,22 @@
       var type = card.getAttribute("data-type") || "";
       card.setAttribute("data-ls-seen", "1");
       var item = lookup(id);
-      if (!item && (type === "Episode" || type === "Season") && !(id in state.parents)) {
-        card.removeAttribute("data-ls-seen"); // come back once the parent is known
+      if (item) {
+        addBadge(card, item);
+      } else if ((type === "Episode" || type === "Season") && !(id in state.parents)) {
         needParents.push(id);
-        continue;
       }
-      if (item) addBadge(card, item);
     }
     if (needParents.length) {
-      resolveParents(needParents).then(decorateCards);
+      resolveParents(needParents).then(function () {
+        // Only the cards whose parent was just learned; everything else is already marked seen.
+        needParents.forEach(function (id) {
+          var item = lookup(id);
+          if (!item) return;
+          var late = document.querySelectorAll('.card[data-id="' + id + '"]');
+          for (var k = 0; k < late.length; k++) addBadge(late[k], item);
+        });
+      });
     }
   }
 
@@ -239,7 +268,7 @@
     }
     var item = lookup(id);
     if (!item) {
-      if (!(id in state.parents)) {
+      if (!(id in state.parents) && !state.pendingParents[id]) {
         resolveParents([id]).then(decorateDetail);
       }
       if (existing) existing.parentNode.removeChild(existing);
