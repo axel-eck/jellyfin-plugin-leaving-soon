@@ -33,7 +33,7 @@ public class LeavingSoonController : ControllerBase
         var items = _cache.Items.Values
             .Where(i => config.WarnWithinDays <= 0 || i.DeleteAt <= now.AddDays(config.WarnWithinDays))
             .OrderBy(i => i.DeleteAt)
-            .Select(i => new ItemDto(i.MediaServerId, i.MediaType, i.DeleteAt, i.AddDate, i.CollectionId, i.CollectionTitle, i.Deletes, i.SizeBytes))
+            .Select(i => new ItemDto(i.MediaServerId, i.MediaType, i.DeleteAt, i.AddDate, i.CollectionId, i.CollectionTitle, i.Deletes, i.SizeBytes, i.Title, i.SeriesId, i.SeriesName, i.SeasonId, i.SeasonNumber, i.EpisodeNumber))
             .ToList();
 
         return new ItemsResponse(
@@ -118,7 +118,7 @@ public class LeavingSoonController : ControllerBase
             Version,
             _cache.Items.Values
                 .OrderBy(i => i.DeleteAt)
-                .Select(i => new StatusItemDto(i.MediaServerId, i.Title, i.MediaType, i.CollectionTitle, ServarrAction.Label(i.Action), i.Deletes, i.AddDate, i.DeleteAt, i.SizeBytes))
+                .Select(i => new StatusItemDto(i.MediaServerId, i.SeriesName is null || i.MediaType == "show" ? i.Title : i.SeriesName + " · " + (i.SeasonNumber is int sn ? (i.EpisodeNumber is int en ? $"S{sn:00}E{en:00} " : $"S{sn:00} ") : string.Empty) + i.Title, i.MediaType, i.CollectionTitle, ServarrAction.Label(i.Action), i.Deletes, i.AddDate, i.DeleteAt, i.SizeBytes))
                 .ToList());
     }
 
@@ -126,7 +126,7 @@ public class LeavingSoonController : ControllerBase
 
     public sealed record SettingsDto(bool ShowBanner, bool ShowBadges, int WarnWithinDays, int UrgentWithinDays);
 
-    public sealed record ItemDto(string Id, string MediaType, DateTimeOffset DeleteAt, DateTimeOffset AddDate, int CollectionId, string CollectionTitle, bool Deletes, long? SizeBytes);
+    public sealed record ItemDto(string Id, string MediaType, DateTimeOffset DeleteAt, DateTimeOffset AddDate, int CollectionId, string CollectionTitle, bool Deletes, long? SizeBytes, string? Title, string? SeriesId, string? SeriesName, string? SeasonId, int? SeasonNumber, int? EpisodeNumber);
 
     public sealed record StatusResponse(DateTimeOffset ServerTime, DateTimeOffset? LastRefresh, DateTimeOffset? LastSuccess, string? LastError, double LastDurationMs, int CollectionsTracked, int CollectionsSeen, string MaintainerrUrl, string Version, List<StatusItemDto> Items);
 

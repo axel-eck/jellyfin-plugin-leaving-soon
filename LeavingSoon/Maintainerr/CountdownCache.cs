@@ -1,9 +1,17 @@
 using System.Diagnostics;
+using MediaBrowser.Controller.Entities.Movies;
+using MediaBrowser.Controller.Entities.TV;
+using MediaBrowser.Controller.Library;
 using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.LeavingSoon.Maintainerr;
 
 /// <summary>One Jellyfin item scheduled for removal by Maintainerr.</summary>
+/// <remarks>
+/// <paramref name="MediaType"/> is the Maintainerr collection type: movie, show, season or episode.
+/// Series/season ids and numbers come from Jellyfin's library so the web client can decorate the
+/// series page and the episode cards of a season-level collection.
+/// </remarks>
 public sealed record LeavingItem(
     string MediaServerId,
     int CollectionId,
@@ -14,19 +22,26 @@ public sealed record LeavingItem(
     DateTimeOffset AddDate,
     DateTimeOffset DeleteAt,
     long? SizeBytes,
-    string? Title);
+    string? Title,
+    string? SeriesId = null,
+    string? SeriesName = null,
+    string? SeasonId = null,
+    int? SeasonNumber = null,
+    int? EpisodeNumber = null);
 
 /// <summary>Latest snapshot of what Maintainerr is going to remove, refreshed in the background.</summary>
 public sealed class CountdownCache
 {
     private readonly MaintainerrClient _client;
+    private readonly ILibraryManager _libraryManager;
     private readonly ILogger<CountdownCache> _logger;
     private readonly SemaphoreSlim _refreshLock = new(1, 1);
     private IReadOnlyDictionary<string, LeavingItem> _items = new Dictionary<string, LeavingItem>(StringComparer.OrdinalIgnoreCase);
 
-    public CountdownCache(MaintainerrClient client, ILogger<CountdownCache> logger)
+    public CountdownCache(MaintainerrClient client, ILibraryManager libraryManager, ILogger<CountdownCache> logger)
     {
         _client = client;
+        _libraryManager = libraryManager;
         _logger = logger;
     }
 
@@ -79,7 +94,7 @@ public sealed class CountdownCache
 
                     var added = item.AddDate ?? now;
                     var deleteAt = added.AddDays(Math.Max(0, collection.DeleteAfterDays));
-                    var entry = new LeavingItem(
+                    var entry = Enrich(new LeavingItem(
                         item.MediaServerId,
                         collection.Id,
                         collection.Title,
@@ -89,7 +104,7 @@ public sealed class CountdownCache
                         added,
                         deleteAt,
                         item.SizeBytes,
-                        item.MediaData?.Title ?? item.MediaData?.Name);
+                        item.MediaData?.Title ?? item.MediaData?.Name));
 
                     // The same item can sit in several collections: the earliest removal wins.
                     if (!next.TryGetValue(item.MediaServerId, out var existing) || entry.DeleteAt < existing.DeleteAt)
@@ -125,6 +140,52 @@ public sealed class CountdownCache
             LastRefresh = DateTimeOffset.UtcNow;
             LastDuration = watch.Elapsed;
             _refreshLock.Release();
+        }
+    }
+
+    /// <summary>Adds series/season context (and a title when Maintainerr had none) from Jellyfin's library.</summary>
+    private LeavingItem Enrich(LeavingItem entry)
+    {
+        if (!Guid.TryParse(entry.MediaServerId, out var guid))
+        {
+            return entry;
+        }
+
+        try
+        {
+            switch (_libraryManager.GetItemById(guid))
+            {
+                case Episode episode:
+                    return entry with
+                    {
+                        Title = entry.Title ?? episode.Name,
+                        SeriesId = episode.SeriesId == Guid.Empty ? null : episode.SeriesId.ToString("N"),
+                        SeriesName = episode.SeriesName,
+                        SeasonId = episode.SeasonId == Guid.Empty ? null : episode.SeasonId.ToString("N"),
+                        SeasonNumber = episode.ParentIndexNumber,
+                        EpisodeNumber = episode.IndexNumber,
+                    };
+                case Season season:
+                    return entry with
+                    {
+                        Title = entry.Title ?? season.Name,
+                        SeriesId = season.SeriesId == Guid.Empty ? null : season.SeriesId.ToString("N"),
+                        SeriesName = season.SeriesName,
+                        SeasonId = entry.MediaServerId,
+                        SeasonNumber = season.IndexNumber,
+                    };
+                case Series series:
+                    return entry with { Title = entry.Title ?? series.Name, SeriesId = entry.MediaServerId, SeriesName = series.Name };
+                case Movie movie:
+                    return entry with { Title = entry.Title ?? movie.Name };
+                default:
+                    return entry;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Leaving Soon: could not read item {Id} from the library", entry.MediaServerId);
+            return entry;
         }
     }
 }
