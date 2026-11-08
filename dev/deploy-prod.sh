@@ -16,7 +16,8 @@ import json,sys; s=[x for x in json.load(sys.stdin) if x.get(\"NowPlayingItem\")
 print(\"lectures en cours:\", len(s), [x.get(\"UserName\") for x in s])
 sys.exit(1 if s else 0)"' || { echo "quelqu'un regarde quelque chose : réessayer plus tard"; exit 1; }
 
-ssh "$HOST" "P=/home/axeleck/appdata/jellyfin/data/plugins; rm -rf \"\$P/Leaving Soon_${VERSION}\"; tar -xzf - -C \"\$P\"; ls \"\$P/Leaving Soon_${VERSION}\"" < "$REPO/out/leaving-soon-${VERSION}.tgz"
+# rm des ._* : au cas où l'archive viendrait d'un tar macOS sans COPYFILE_DISABLE (Jellyfin tente de les charger et désactive le plugin).
+ssh "$HOST" "P=/home/axeleck/appdata/jellyfin/data/plugins; rm -rf \"\$P/Leaving Soon_${VERSION}\"; tar -xzf - -C \"\$P\" 2>/dev/null; rm -f \"\$P/Leaving Soon_${VERSION}\"/._*; python3 -c \"import json,sys; p=sys.argv[1]; m=json.load(open(p)); m['status']='Active'; json.dump(m, open(p,'w'), indent=2)\" \"\$P/Leaving Soon_${VERSION}/meta.json\"; ls \"\$P/Leaving Soon_${VERSION}\"" < "$REPO/out/leaving-soon-${VERSION}.tgz"
 ssh "$HOST" 'cat > /home/axeleck/appdata/jellyfin/custom-cont-init.d/jellyfin-leaving-soon-init.sh && chmod +x /home/axeleck/appdata/jellyfin/custom-cont-init.d/jellyfin-leaving-soon-init.sh' < "$REPO/contrib/jellyfin-leaving-soon-init.sh"
 
 ssh "$HOST" 'cd /home/axeleck/stacks/jellyfin && sudo -n docker compose restart jellyfin >/dev/null 2>&1; curl -s -o /dev/null --retry 60 --retry-delay 2 --retry-all-errors -m 5 http://localhost:8096/health; sleep 8
