@@ -193,27 +193,29 @@
     }
   }
 
+  // Badges are drawn by CSS (::after on the poster frame) from data attributes: nothing is inserted
+  // into the card's DOM, so React-rendered sections (home, experimental layout) keep reconciling fine.
   function addBadge(card, item) {
     var host = card.querySelector(".cardScalable") || card.querySelector(".cardImageContainer") || card;
-    if (!host || host.querySelector(".ls-badge")) return;
-    var badge = document.createElement("div");
-    badge.className = "ls-badge is-" + urgency(item);
-    badge.setAttribute("data-ls-id", item.Id);
-    badge.textContent = STR.badgeDays(daysLeft(item));
-    badge.title = STR.title(item.MediaType) + " " + STR.when(daysLeft(item), fmtDate(item.DeleteAt));
-    host.appendChild(badge);
+    host.setAttribute("data-ls-badge", STR.badgeDays(daysLeft(item)));
+    host.setAttribute("data-ls-level", urgency(item));
+    host.setAttribute("data-ls-id", item.Id);
+    host.title = STR.title(item.MediaType) + " " + STR.when(daysLeft(item), fmtDate(item.DeleteAt));
   }
 
   function refreshBadges() {
-    var badges = document.querySelectorAll(".ls-badge[data-ls-id]");
-    for (var i = 0; i < badges.length; i++) {
-      var item = state.items[badges[i].getAttribute("data-ls-id")];
+    var hosts = document.querySelectorAll("[data-ls-badge][data-ls-id]");
+    for (var i = 0; i < hosts.length; i++) {
+      var item = state.items[hosts[i].getAttribute("data-ls-id")];
       if (!item) {
-        badges[i].parentNode.removeChild(badges[i]);
+        hosts[i].removeAttribute("data-ls-badge");
+        hosts[i].removeAttribute("data-ls-level");
+        hosts[i].removeAttribute("data-ls-id");
+        hosts[i].removeAttribute("title");
         continue;
       }
-      badges[i].textContent = STR.badgeDays(daysLeft(item));
-      badges[i].className = "ls-badge is-" + urgency(item);
+      hosts[i].setAttribute("data-ls-badge", STR.badgeDays(daysLeft(item)));
+      hosts[i].setAttribute("data-ls-level", urgency(item));
     }
   }
 
@@ -246,7 +248,10 @@
     if (existing && existing.getAttribute("data-ls-for") === id && existing.getAttribute("data-ls-days") === String(daysLeft(item))) return;
     if (existing) existing.parentNode.removeChild(existing);
 
-    var anchor = view.querySelector(".detailPagePrimaryContainer") || view.querySelector(".detailPageContent") || view;
+    // Right under the title/info line, before the Video/Audio rows (validated on Jellyfin 12.3).
+    var content = view.querySelector(".detailPagePrimaryContent");
+    var section = content ? content.querySelector(".detailSection") || content : null;
+    var anchor = section || view.querySelector(".detailPagePrimaryContainer") || view;
     var d = daysLeft(item);
     var banner = document.createElement("div");
     banner.className = "ls-banner is-" + urgency(item);
@@ -283,7 +288,11 @@
     banner.appendChild(icon);
     banner.appendChild(body);
     banner.appendChild(count);
-    anchor.insertAdjacentElement(anchor === view ? "afterbegin" : "afterend", banner);
+    if (section) {
+      section.insertBefore(banner, section.firstChild);
+    } else {
+      anchor.insertAdjacentElement(anchor === view ? "afterbegin" : "afterend", banner);
+    }
   }
 
   // ------------------------------------------------------------------ wiring
