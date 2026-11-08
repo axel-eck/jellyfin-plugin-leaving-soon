@@ -23,12 +23,14 @@
   };
 
   // ------------------------------------------------------------------ i18n
-  var LANG = (function () {
+  // Read at render time, not at load: the web client applies the user's display language (Jellyfin
+  // user setting, which may differ from the browser's) after start-up by setting <html lang>.
+  function lang() {
     var l = (document.documentElement.lang || navigator.language || "en").toLowerCase();
     return l.indexOf("fr") === 0 ? "fr" : "en";
-  })();
+  }
 
-  var STR = {
+  var STRINGS = {
     fr: {
       badgeDays: function (d) {
         return d <= 0 ? "Dernier jour" : "J-" + d;
@@ -44,6 +46,7 @@
       hint: "Personne ne l'a regardé depuis longtemps. Lancez-le pour le garder : Maintainerr le retire de la liste au prochain passage.",
       collection: "Règle",
       size: "Taille",
+      locale: "fr-FR",
     },
     en: {
       badgeDays: function (d) {
@@ -60,8 +63,13 @@
       hint: "Nobody has watched it in a long time. Play it to keep it: Maintainerr drops it from the list on its next run.",
       collection: "Rule",
       size: "Size",
+      locale: undefined,
     },
-  }[LANG];
+  };
+
+  function str() {
+    return STRINGS[lang()];
+  }
 
   function now() {
     return Date.now() + state.clockOffset;
@@ -74,7 +82,7 @@
 
   function fmtDate(iso) {
     try {
-      return new Date(iso).toLocaleDateString(LANG === "fr" ? "fr-FR" : undefined, {
+      return new Date(iso).toLocaleDateString(str().locale, {
         day: "numeric",
         month: "long",
       });
@@ -86,7 +94,8 @@
   function fmtSize(bytes) {
     if (!bytes) return "";
     var gb = bytes / 1e9;
-    return gb >= 1 ? gb.toFixed(1) + " " + (LANG === "fr" ? "Go" : "GB") : Math.round(bytes / 1e6) + " " + (LANG === "fr" ? "Mo" : "MB");
+    var fr = lang() === "fr";
+    return gb >= 1 ? gb.toFixed(1) + " " + (fr ? "Go" : "GB") : Math.round(bytes / 1e6) + " " + (fr ? "Mo" : "MB");
   }
 
   function urgency(item) {
@@ -226,10 +235,10 @@
   // into the card's DOM, so React-rendered sections (home, experimental layout) keep reconciling fine.
   function addBadge(card, item) {
     var host = card.querySelector(".cardScalable") || card.querySelector(".cardImageContainer") || card;
-    host.setAttribute("data-ls-badge", STR.badgeDays(daysLeft(item)));
+    host.setAttribute("data-ls-badge", str().badgeDays(daysLeft(item)));
     host.setAttribute("data-ls-level", urgency(item));
     host.setAttribute("data-ls-id", item.Id);
-    host.title = STR.title(item.MediaType) + " " + STR.when(daysLeft(item), fmtDate(item.DeleteAt));
+    host.title = str().title(item.MediaType) + " " + str().when(daysLeft(item), fmtDate(item.DeleteAt));
   }
 
   function refreshBadges() {
@@ -243,7 +252,7 @@
         hosts[i].removeAttribute("title");
         continue;
       }
-      hosts[i].setAttribute("data-ls-badge", STR.badgeDays(daysLeft(item)));
+      hosts[i].setAttribute("data-ls-badge", str().badgeDays(daysLeft(item)));
       hosts[i].setAttribute("data-ls-level", urgency(item));
     }
   }
@@ -274,7 +283,8 @@
       if (existing) existing.parentNode.removeChild(existing);
       return;
     }
-    if (existing && existing.getAttribute("data-ls-for") === id && existing.getAttribute("data-ls-days") === String(daysLeft(item))) return;
+    var key = String(daysLeft(item)) + ":" + lang();
+    if (existing && existing.getAttribute("data-ls-for") === id && existing.getAttribute("data-ls-days") === key) return;
     if (existing) existing.parentNode.removeChild(existing);
 
     // Right under the title/info line, before the Video/Audio rows (validated on Jellyfin 12.3).
@@ -285,7 +295,7 @@
     var banner = document.createElement("div");
     banner.className = "ls-banner is-" + urgency(item);
     banner.setAttribute("data-ls-for", id);
-    banner.setAttribute("data-ls-days", String(d));
+    banner.setAttribute("data-ls-days", key);
     banner.setAttribute("role", "status");
 
     var icon = document.createElement("span");
@@ -297,14 +307,14 @@
     body.className = "ls-banner-body";
     var title = document.createElement("div");
     title.className = "ls-banner-title";
-    title.textContent = STR.title(item.MediaType) + " " + STR.when(d, fmtDate(item.DeleteAt));
+    title.textContent = str().title(item.MediaType) + " " + str().when(d, fmtDate(item.DeleteAt));
     var hint = document.createElement("div");
     hint.className = "ls-banner-hint";
-    hint.textContent = STR.hint;
+    hint.textContent = str().hint;
     var meta = document.createElement("div");
     meta.className = "ls-banner-meta";
-    var parts = [STR.collection + " : " + item.CollectionTitle];
-    if (item.SizeBytes) parts.push(STR.size + " : " + fmtSize(item.SizeBytes));
+    var parts = [str().collection + " : " + item.CollectionTitle];
+    if (item.SizeBytes) parts.push(str().size + " : " + fmtSize(item.SizeBytes));
     meta.textContent = parts.join("  ·  ");
     body.appendChild(title);
     body.appendChild(hint);
@@ -312,7 +322,7 @@
 
     var count = document.createElement("div");
     count.className = "ls-banner-count";
-    count.textContent = STR.badgeDays(d);
+    count.textContent = str().badgeDays(d);
 
     banner.appendChild(icon);
     banner.appendChild(body);
