@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Leaving Soon</title>
+  </head>
+  <body>
+    <div
+      id="leaving-soon-config-page"
+      data-role="page"
+      class="page type-interior pluginConfigurationPage"
+      data-controller="__plugin/LeavingSoon.js"
+    >
+      <div data-role="content">
+        <div class="content-primary ls-page">
+          <div class="sectionTitleContainer flex align-items-center">
+            <h2 class="sectionTitle">Leaving Soon</h2>
+            <a
+              is="emby-linkbutton"
+              class="raised button-alt headerHelpButton emby-button"
+              target="_blank"
+              rel="noopener noreferrer"
+              href="https://github.com/axel-eck/jellyfin-plugin-leaving-soon#readme"
+              >Help</a
+            >
+          </div>
+          <p class="fieldDescription ls-lead">
+            Reads the collections Maintainerr fills and shows viewers, inside Jellyfin, which movies and
+            series are about to be deleted and when. Nothing is written to Maintainerr.
+          </p>
+
+          <form id="ls-form" class="ls-form">
+            <section class="ls-card">
+              <div class="ls-card-head"><h3 class="ls-card-title">Maintainerr</h3></div>
+              <div class="inputContainer">
+                <input is="emby-input" id="MaintainerrUrl" type="url" label="Maintainerr URL" required />
+                <div class="fieldDescription">
+                  As reached from the Jellyfin server, e.g. http://maintainerr:6246 when both run in the
+                  same Docker network.
+                </div>
+              </div>
+              <div class="inputContainer">
+                <input is="emby-input" id="ApiKey" type="password" label="API key (optional)" autocomplete="off" />
+                <div class="fieldDescription">Sent as X-Api-Key. Leave empty when Maintainerr has no authentication.</div>
+              </div>
+              <div class="inputContainer">
+                <input is="emby-input" id="RefreshMinutes" type="number" min="1" max="1440" step="1" label="Refresh every (minutes)" />
+              </div>
+              <label class="checkboxContainer">
+                <input is="emby-checkbox" type="checkbox" id="IncludeNonDeletingCollections" />
+                <span>Also warn for collections that do not delete (review-only, unmonitor, quality-profile change)</span>
+              </label>
+              <div class="ls-actions">
+                <button is="emby-button" type="button" id="ls-test" class="raised button-alt">Test connection</button>
+                <span id="ls-test-result" class="ls-inline-result"></span>
+              </div>
+              <div id="ls-collections" class="ls-collections"></div>
+            </section>
+
+            <section class="ls-card">
+              <div class="ls-card-head"><h3 class="ls-card-title">Display</h3></div>
+              <label class="checkboxContainer">
+                <input is="emby-checkbox" type="checkbox" id="ShowBanner" />
+                <span>Countdown banner on movie and series pages</span>
+              </label>
+              <label class="checkboxContainer">
+                <input is="emby-checkbox" type="checkbox" id="ShowBadges" />
+                <span>Day-count badge on posters</span>
+              </label>
+              <div class="inputContainer">
+                <input is="emby-input" id="WarnWithinDays" type="number" min="0" max="3650" step="1" label="Only warn within (days, 0 = always)" />
+              </div>
+              <div class="inputContainer">
+                <input is="emby-input" id="UrgentWithinDays" type="number" min="0" max="3650" step="1" label="Urgent style within (days)" />
+              </div>
+              <div class="fieldDescription">
+                The web client needs the plugin's script in its index.html once:
+                <code>contrib/jellyfin-leaving-soon-init.sh</code> does it for linuxserver images (custom-cont-init.d).
+              </div>
+            </section>
+
+            <div class="ls-actions">
+              <button is="emby-button" type="submit" class="raised button-submit block"><span>Save</span></button>
+            </div>
+          </form>
+
+          <section class="ls-card">
+            <div class="ls-card-head">
+              <h3 class="ls-card-title">Status</h3>
+              <button is="emby-button" type="button" id="ls-refresh" class="raised button-alt">Refresh now</button>
+            </div>
+            <div id="ls-status" class="ls-status">Loading…</div>
+            <div id="ls-items" class="ls-items"></div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

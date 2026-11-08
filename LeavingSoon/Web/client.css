@@ -1,0 +1,142 @@
+/* Leaving Soon - banner and poster badges. Colours follow the web client theme where it exposes
+   variables, with amber (soon) and red (urgent) accents that read on any poster. */
+:root {
+  --ls-soon: #f5a524;
+  --ls-soon-ink: #1a1200;
+  --ls-urgent: #ff5c5c;
+  --ls-urgent-ink: #fff;
+  --ls-surface: rgba(20, 20, 24, 0.78);
+  --ls-line: rgba(255, 255, 255, 0.14);
+  --ls-radius: 0.75em;
+}
+
+/* ---- poster badge ---- */
+.cardScalable,
+.cardImageContainer {
+  position: relative;
+}
+
+.ls-badge {
+  position: absolute;
+  top: 0.5em;
+  left: 0.5em;
+  z-index: 3;
+  padding: 0.2em 0.6em;
+  border-radius: 999px;
+  font-size: 0.78em;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.ls-badge.is-soon {
+  background: var(--ls-soon);
+  color: var(--ls-soon-ink);
+}
+
+.ls-badge.is-urgent {
+  background: var(--ls-urgent);
+  color: var(--ls-urgent-ink);
+  animation: ls-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes ls-pulse {
+  0%,
+  100% {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(255, 92, 92, 0.25);
+  }
+}
+
+/* ---- detail page banner ---- */
+.ls-banner {
+  display: flex;
+  align-items: center;
+  gap: 1em;
+  margin: 1em 3.3%;
+  padding: 0.9em 1.1em;
+  border-radius: var(--ls-radius);
+  background: var(--ls-surface);
+  border: 1px solid var(--ls-line);
+  border-left-width: 0.35em;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: inherit;
+}
+
+.ls-banner.is-soon {
+  border-left-color: var(--ls-soon);
+}
+
+.ls-banner.is-urgent {
+  border-left-color: var(--ls-urgent);
+}
+
+.ls-banner-icon {
+  font-size: 2em;
+  flex: none;
+}
+
+.ls-banner.is-soon .ls-banner-icon {
+  color: var(--ls-soon);
+}
+
+.ls-banner.is-urgent .ls-banner-icon {
+  color: var(--ls-urgent);
+}
+
+.ls-banner-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ls-banner-title {
+  font-weight: 600;
+  font-size: 1.05em;
+}
+
+.ls-banner-hint {
+  opacity: 0.8;
+  margin-top: 0.15em;
+}
+
+.ls-banner-meta {
+  opacity: 0.6;
+  font-size: 0.85em;
+  margin-top: 0.35em;
+}
+
+.ls-banner-count {
+  flex: none;
+  padding: 0.35em 0.9em;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 1.1em;
+}
+
+.ls-banner.is-soon .ls-banner-count {
+  background: var(--ls-soon);
+  color: var(--ls-soon-ink);
+}
+
+.ls-banner.is-urgent .ls-banner-count {
+  background: var(--ls-urgent);
+  color: var(--ls-urgent-ink);
+}
+
+@media (max-width: 50em) {
+  .ls-banner {
+    margin: 0.75em 1em;
+    gap: 0.75em;
+  }
+
+  .ls-banner-count {
+    display: none;
+  }
+}

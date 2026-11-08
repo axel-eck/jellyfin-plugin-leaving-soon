@@ -1,0 +1,18 @@
+name: "Leaving Soon"
+guid: "d3149a22-93e6-4ae6-915f-23c652a7f6e4"
+version: "1.0.0.0"
+targetAbi: "12.0.0.0"
+framework: "net10.0"
+owner: "axeleck"
+overview: "Countdown warnings in Jellyfin for media Maintainerr is about to delete."
+description: |
+  Reads the collections Maintainerr fills and tells viewers, inside Jellyfin, which movies and
+  series are about to be deleted and when: a countdown banner on the item page and a "D-12" badge
+  on posters. Read-only towards Maintainerr; watching the item is what saves it.
+category: "General"
+artifacts:
+  - "Jellyfin.Plugin.LeavingSoon.dll"
+changelog: |
+  1.0.0.0: First release. Background refresh of Maintainerr collections (only those whose action
+  deletes, unless enabled), /LeavingSoon/Items for signed-in viewers, banner + badges in the web
+  client, dashboard page with connection test and the tracked list.

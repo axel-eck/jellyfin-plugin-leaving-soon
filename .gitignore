@@ -1,0 +1,6 @@
+bin/
+obj/
+publish/
+out/
+*.user
+.DS_Store

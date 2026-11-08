@@ -1,0 +1,109 @@
+/* Leaving Soon dashboard page. Same look as the Pocket ID SSO page: cards on the dashboard surface. */
+.ls-page {
+  --ls-line: rgba(255, 255, 255, 0.12);
+  --ls-surface: rgba(255, 255, 255, 0.04);
+  --ls-muted: rgba(255, 255, 255, 0.62);
+  --ls-ok: #3ddc84;
+  --ls-warn: #f5a524;
+  --ls-danger: #ff6b6b;
+  --ls-radius: 0.75em;
+}
+
+.ls-lead {
+  max-width: 60em;
+}
+
+.ls-card {
+  background: var(--ls-surface);
+  border: 1px solid var(--ls-line);
+  border-radius: var(--ls-radius);
+  padding: 1em 1.25em 1.25em;
+  margin: 1em 0;
+}
+
+.ls-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1em;
+  margin-bottom: 0.5em;
+}
+
+.ls-card-title {
+  margin: 0;
+  font-size: 1.1em;
+}
+
+.ls-actions {
+  display: flex;
+  align-items: center;
+  gap: 1em;
+  margin-top: 1em;
+  flex-wrap: wrap;
+}
+
+.ls-inline-result {
+  color: var(--ls-muted);
+}
+
+.ls-inline-result.is-ok {
+  color: var(--ls-ok);
+}
+
+.ls-inline-result.is-error,
+.ls-status .is-error {
+  color: var(--ls-danger);
+}
+
+.ls-status > div {
+  margin: 0.25em 0;
+}
+
+.ls-status b {
+  display: inline-block;
+  min-width: 8em;
+  color: var(--ls-muted);
+  font-weight: 500;
+}
+
+.ls-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1em;
+  font-size: 0.95em;
+}
+
+.ls-table th,
+.ls-table td {
+  text-align: left;
+  padding: 0.45em 0.6em;
+  border-bottom: 1px solid var(--ls-line);
+  vertical-align: top;
+}
+
+.ls-table th {
+  color: var(--ls-muted);
+  font-weight: 500;
+}
+
+.ls-table tr.is-review td {
+  color: var(--ls-muted);
+}
+
+.ls-table tr.is-off td {
+  opacity: 0.5;
+}
+
+.ls-table tr.is-deleting td:last-child {
+  color: var(--ls-warn);
+}
+
+.ls-table tr.is-urgent td:nth-child(6) {
+  color: var(--ls-danger);
+  font-weight: 600;
+}
+
+.ls-empty {
+  color: var(--ls-muted);
+  padding: 1em 0;
+}
