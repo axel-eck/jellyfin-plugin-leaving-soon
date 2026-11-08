@@ -13,6 +13,7 @@ STAGE="$(mktemp -d)"
 mkdir -p "$STAGE/Leaving Soon_${VERSION}"
 cp publish/Jellyfin.Plugin.LeavingSoon.dll "$STAGE/Leaving Soon_${VERSION}/"
 cp dev/meta.json "$STAGE/Leaving Soon_${VERSION}/meta.json"
-tar -C "$STAGE" -czf "out/leaving-soon-${VERSION}.tgz" "Leaving Soon_${VERSION}"
+# COPYFILE_DISABLE: sans lui, tar sur macOS ajoute des fichiers ._* (AppleDouble) que Jellyfin tente de charger comme DLL.
+COPYFILE_DISABLE=1 tar -C "$STAGE" --no-xattrs -czf "out/leaving-soon-${VERSION}.tgz" "Leaving Soon_${VERSION}" 2>/dev/null || COPYFILE_DISABLE=1 tar -C "$STAGE" -czf "out/leaving-soon-${VERSION}.tgz" "Leaving Soon_${VERSION}"
 rm -rf "$STAGE"
 echo "built out/leaving-soon-${VERSION}.tgz"
