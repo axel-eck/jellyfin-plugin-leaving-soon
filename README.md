@@ -11,6 +11,10 @@ Only collections whose Maintainerr action actually deletes media are shown (`del
 
 The deletion date is `addDate + deleteAfterDays` of the collection, i.e. when Maintainerr will act on the item. An item present in several collections keeps the earliest date.
 
+## Status
+
+Built for one home server and used there daily since November 2026; reports and pull requests are welcome. There is no plugin repository manifest yet, so installation is manual (see below).
+
 ## Requirements
 
 - Jellyfin 12 (targetAbi 12.0.0.0, .NET 10).
@@ -40,7 +44,7 @@ Jellyfin serialises JSON in PascalCase (`Items`, `DeleteAt`…) and omits nulls.
 
 - `dev/build.sh` — builds in the `mcr.microsoft.com/dotnet/sdk:10.0` container, produces `publish/` and `out/leaving-soon-<version>.tgz`.
 - `dev/deploy-test.sh` — build + local test Jellyfin (`jftest`, linuxserver image, port 8097, data in `~/dev/jftest`; first run completes the setup wizard, admin password in `~/dev/jftest/admin-password.txt`).
-- `dev/deploy-prod.sh` — build + install on the production host over SSH, restart, configure, refresh (refuses to restart while someone is playing).
+- `dev/deploy-prod.sh` — build + install on a remote Jellyfin (linuxserver image) over SSH, restart, configure, refresh (refuses to restart while someone is playing). Host, paths and API key come from `dev/deploy-prod.env` (git-ignored, see `dev/deploy-prod.env.example`).
 
 The web client script is plain ES5 (no modules) so it loads in every browser the web client supports. It injects `client.css`, polls `/LeavingSoon/Items` every 5 minutes, decorates cards through a `MutationObserver` and the detail page on `hashchange`/`viewshow`. Episodes and seasons are mapped to their series with one batched `/Items?Ids=` lookup.
 
